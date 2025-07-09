@@ -43,4 +43,6 @@ Thumbs.db
 .cache/
 
 service-account.json
-*.json
+*.pem
+*.key
+credentials.json
