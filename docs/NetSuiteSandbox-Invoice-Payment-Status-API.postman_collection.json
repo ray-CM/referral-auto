@@ -1,0 +1,158 @@
+{
+	"info": {
+		"_postman_id": "fa72003f-648b-43be-b754-300c29169c82",
+		"name": "[NetSuite] Sandbox API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "9252772"
+	},
+	"item": [
+		{
+			"name": "Referral Report Service",
+			"item": [
+				{
+					"name": "Invoice Payment Status API",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://7005542-sb2.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=customscript_cm_rl_referral_inv_status&deploy=customdeploy_cm_rl_referral_inv_status&month=202506&billing_account_ids=01AB50-D7F322-D81D48,010645-53CF3A-605DD7,01203E-3575B6-D165FF,011837-051D6D-257B5C,0122A7-9EC776-451926",
+							"protocol": "https",
+							"host": [
+								"7005542-sb2",
+								"restlets",
+								"api",
+								"netsuite",
+								"com"
+							],
+							"path": [
+								"app",
+								"site",
+								"hosting",
+								"restlet.nl"
+							],
+							"query": [
+								{
+									"key": "script",
+									"value": "customscript_cm_rl_referral_inv_status"
+								},
+								{
+									"key": "deploy",
+									"value": "customdeploy_cm_rl_referral_inv_status"
+								},
+								{
+									"key": "month",
+									"value": "202506",
+									"description": "Invoice month. Format: `YYYYMM`."
+								},
+								{
+									"key": "billing_account_ids",
+									"value": "01AB50-D7F322-D81D48,010645-53CF3A-605DD7,01203E-3575B6-D165FF,011837-051D6D-257B5C,0122A7-9EC776-451926",
+									"description": "A comma-separated list of billing account IDs (e.g., `AAAAAA-AAAAAA-AAAAAA,BBBBBB-BBBBBB-BBBBBB`)."
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "oauth1",
+				"oauth1": [
+					{
+						"key": "realm",
+						"value": "7005542_SB2",
+						"type": "string"
+					},
+					{
+						"key": "tokenSecret",
+						"value": "632f0bfd7cda15bd7d98b16af712f20ca0d35ae5eeb5bd928a1a85306a83876a",
+						"type": "string"
+					},
+					{
+						"key": "token",
+						"value": "acc7e12cb2c6caa42458cc86138e6774501d73169222dbc40d9d76afb9fbed3a",
+						"type": "string"
+					},
+					{
+						"key": "consumerSecret",
+						"value": "00f142ec94d52ed57374586719d37230cd61519dfdcdc3e6a0789a3c90ec8771",
+						"type": "string"
+					},
+					{
+						"key": "consumerKey",
+						"value": "d90bf2d804d1a637c0f6353537b66b7a6caf85d44041a1f333e0791129efe8f0",
+						"type": "string"
+					},
+					{
+						"key": "signatureMethod",
+						"value": "HMAC-SHA256",
+						"type": "string"
+					},
+					{
+						"key": "addParamsToHeader",
+						"value": true,
+						"type": "boolean"
+					},
+					{
+						"key": "version",
+						"value": "1.0",
+						"type": "string"
+					},
+					{
+						"key": "addEmptyParamsToSign",
+						"value": false,
+						"type": "boolean"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
