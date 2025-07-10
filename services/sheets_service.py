@@ -22,8 +22,6 @@ class SheetsService:
     def get_or_create_worksheet(self, year: int) -> gspread.Worksheet:
         """
         取得或建立指定年份的工作表
-            year: 年份 
-            Returns: gspread.Worksheet: 工作表物件
         """
         sheet_name = Config.SHEET_NAME_FORMAT.format(year=year)
         
@@ -38,10 +36,9 @@ class SheetsService:
                 cols=len(Config.OUTPUT_COLUMNS)
             )
             
-            # 設定標題
+            # 設定標題列 - 藍色背景 #366092，白色粗體字，字體大小 11
             worksheet.insert_row(Config.OUTPUT_COLUMNS, 1)
-            
-            # 格式化標題列 - 藍色背景 #366092，白色粗體字，字體大小 11
+        
             try:
                 worksheet.format('A1:J1', {
                     'backgroundColor': {
@@ -78,9 +75,6 @@ class SheetsService:
     def write_monthly_data(self, data: pd.DataFrame, year: int, month: int):
         """
         寫入月份資料到工作表
-            data: 要寫入的資料
-            year: 年份
-            month: 月份
         """
         worksheet = self.get_or_create_worksheet(year)
         
@@ -90,11 +84,11 @@ class SheetsService:
         # 檢查是否已存在該月份資料，如果有則先刪除
         self._remove_existing_month_data(worksheet, month)
         
-        # 寫入資料
+        # 準備寫入資料
         if data.empty:
             return
         
-        # 處理 NaN 值 - 轉換為空字串或適當的預設值
+        # 處理 NaN 值 
         data_clean = data.copy()
         
         # 將所有 NaN 替換為空字串，除了數值欄位
@@ -106,17 +100,32 @@ class SheetsService:
         
         # 找到最後一行
         last_row = len(worksheet.get_all_values())
+        
+        if last_row > 1:  # 確保不是只有標題列的空工作表
+            blank_row_position = last_row + 1
+            worksheet.insert_row([''] * len(Config.OUTPUT_COLUMNS), blank_row_position)
+            print(f"Inserted blank row at position {blank_row_position}")
+            # 更新最後一行位置
+            last_row = len(worksheet.get_all_values())
+        
         start_row = last_row + 1
         
         # 將 DataFrame 轉換為清單格式，確保所有值都是 JSON 可序列化的
         values = []
         for _, row in data_clean.iterrows():
             row_values = []
-            for value in row:
-                if pd.isna(value):
+            for col_idx, value in enumerate(row):
+                # 特殊處理 Month 欄位 (第一欄)，確保為文字格式
+                if col_idx == 0:  # Month 欄位
+                    if pd.isna(value):
+                        row_values.append('')
+                    else:
+                        # 強制轉換為字串，避免日期自動轉換
+                        row_values.append(f"'{str(value)}")  # 前綴單引號強制文字格式
+                elif pd.isna(value):
                     row_values.append('')
                 elif isinstance(value, (int, float)):
-                    if pd.isna(value) or value != value:  
+                    if pd.isna(value) or value != value:  # 檢查 NaN
                         row_values.append('')
                     else:
                         row_values.append(value)
@@ -133,7 +142,7 @@ class SheetsService:
                 worksheet.update(cell_range, values)
                 print(f"Successfully wrote {len(values)} rows to Google Sheets")
                 
-                # 設定寫入字體大小為 11
+                # 設定新寫入資料的字體大小為 11
                 data_range = f'A{start_row}:J{end_row}'
                 worksheet.format(data_range, {
                     'textFormat': {
@@ -141,9 +150,9 @@ class SheetsService:
                     }
                 })
                 
-                # 設定金錢格式 
-                spending_range = f'D{start_row}:D{end_row}'  # Spending $$ 
-                profit_range = f'F{start_row}:F{end_row}'    # Profit $$ 
+                # 設定金錢格式 - D欄 (Spending $$) 和 F欄 (Profit $$)
+                spending_range = f'D{start_row}:D{end_row}'  
+                profit_range = f'F{start_row}:F{end_row}'                    
                 money_format = {
                     'numberFormat': {
                         'type': 'CURRENCY',
@@ -165,30 +174,34 @@ class SheetsService:
     
     def _ensure_correct_headers(self, worksheet: gspread.Worksheet):
         """
-        確保表頭格式正確（不重寫表頭）
+        確保表頭格式正確（不重寫表頭內容）
+        
+        Args:
+            worksheet: 工作表物件
         """
         try:
-            # 檢查第一行是否存在
+            # 檢查第一行是否存在（避免空工作表）
             current_headers = worksheet.row_values(1)
             
             if not current_headers:
-                # 當工作表完全沒有表頭時才寫入，若已存在，只確保格式正確，不重寫內容
+                # 只有當工作表完全沒有表頭時才寫入
                 print("No headers found, adding headers...")
                 worksheet.update('A1:J1', [Config.OUTPUT_COLUMNS])
             else:
+                # 表頭已存在，只確保格式正確，不重寫內容
                 print("Headers already exist, ensuring format only...")
             
-            # 不管內容如何，確保格式正確
+            # 重新格式化表頭（不管內容如何，確保格式正確）
             worksheet.format('A1:J1', {
                 'backgroundColor': {
-                    'red': 54/255,    
+                    'red': 54/255,    # #366092
                     'green': 96/255, 
                     'blue': 146/255
                 },
                 'textFormat': {
                     'bold': True,
                     'foregroundColor': {
-                        'red': 1.0,      
+                        'red': 1.0,      # 白色文字
                         'green': 1.0, 
                         'blue': 1.0
                     },
@@ -203,6 +216,8 @@ class SheetsService:
     def update_spreadsheet_title(self, month: int):
         """
         更新 Google Sheets 檔案名稱
+        
+        Args:
             month: 月份 (YYYYMM 格式)
         """
         try:
@@ -215,6 +230,11 @@ class SheetsService:
     def _write_row_by_row(self, worksheet: gspread.Worksheet, values: list, start_row: int):
         """
         逐行寫入資料（備用方法）
+        
+        Args:
+            worksheet: 工作表物件
+            values: 要寫入的資料
+            start_row: 開始行號
         """
         print("Attempting row-by-row write...")
         successful_rows = 0
@@ -234,6 +254,8 @@ class SheetsService:
     def _remove_existing_month_data(self, worksheet: gspread.Worksheet, month: int):
         """
         移除已存在的月份資料
+        
+        Args:
             worksheet: 工作表物件
             month: 月份
         """
@@ -244,8 +266,8 @@ class SheetsService:
         
         # 找到要刪除的行
         rows_to_delete = []
-        for i, row in enumerate(all_values[1:], start=2):  
-            if row and row[0] == str(month): 
+        for i, row in enumerate(all_values[1:], start=2):  # 從第2行開始
+            if row and row[0] == str(month):  # Month 欄位在第一欄
                 rows_to_delete.append(i)
         
         # 從後往前刪除，避免行號變動
@@ -255,14 +277,16 @@ class SheetsService:
     def _format_null_cells(self, worksheet: gspread.Worksheet, data: pd.DataFrame, start_row: int):
         """
         格式化包含 null 值的儲存格
+        
+        Args:
             worksheet: 工作表物件
             data: 資料
             start_row: 開始行號
         """
-        # 設 null 欄位底色
+        # 修正：淺黃色 #fff2cc
         null_format = {
             'backgroundColor': {
-                'red': 1.0,           
+                'red': 1.0,           # #fff2cc 的 RGB 值
                 'green': 242/255, 
                 'blue': 204/255
             },
@@ -280,7 +304,7 @@ class SheetsService:
                              Config.ERROR_MESSAGES["NOT_FOUND_BILLING"],
                              Config.ERROR_MESSAGES["NOT_FOUND_CUSTOMER"]]):
                     # 將欄位索引轉換為字母
-                    col_letter = chr(65 + col_idx)  
+                    col_letter = chr(65 + col_idx)  # A, B, C...
                     cell_range = f'{col_letter}{actual_row}'
                     try:
                         worksheet.format(cell_range, null_format)
@@ -290,19 +314,18 @@ class SheetsService:
     def get_waiting_records(self, year: int) -> list:
         """
         取得所有狀態為 "waiting" 的記錄
-        Returns: 包含 waiting 狀態記錄的清單
         """
         try:
             worksheet = self.get_or_create_worksheet(year)
             all_values = worksheet.get_all_values()
             
-            if len(all_values) <= 1:  
+            if len(all_values) <= 1:  # 只有標題列
                 return []
             
             headers = all_values[0]
             waiting_records = []
             
-            # 找到 Customer<>CM 欄位
+            # 找到 Customer<>CM 
             try:
                 cm_col_idx = headers.index("Customer<>CM")
                 month_col_idx = headers.index("Month")
@@ -331,8 +354,6 @@ class SheetsService:
     def update_payment_status(self, year: int, updates: list):
         """
         批次更新付款狀態
-            year: 年份
-            updates: 更新清單 [{'row_number': int, 'new_status': str}]
         """
         if not updates:
             return
@@ -342,7 +363,7 @@ class SheetsService:
         
         try:
             cm_col_idx = headers.index("Customer<>CM")
-            col_letter = chr(65 + cm_col_idx)  # 轉換為字母
+            col_letter = chr(65 + cm_col_idx)  
             
             # 批次更新
             batch_updates = []
